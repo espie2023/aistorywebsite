@@ -1,0 +1,29 @@
+{
+  "name": "ai-interactive-story",
+  "version": "1.0.0",
+  "description": "AI互动故事网站 - 基于Kimi API的极简互动故事",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required for static site'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": [
+    "ai",
+    "story",
+    "interactive",
+    "kimi",
+    "vercel"
+  ],
+  "author": "AI Story Team",
+  "license": "MIT"
+}

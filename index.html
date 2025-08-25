@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI互动故事</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI互动故事</h1>
+            <p>选择你的命运，体验不同的故事结局（20步内完成）</p>
+        </header>
+
+        <main>
+            <div id="setup-container" style="display: block;">
+                <div id="story-setup">
+                    <h2>故事设定</h2>
+                    <div class="setup-grid">
+                        <div class="setup-item">
+                            <label>故事类型：</label>
+                            <select id="story-type">
+                                <option value="奇幻冒险">奇幻冒险</option>
+                                <option value="科幻探索">科幻探索</option>
+                                <option value="悬疑推理">悬疑推理</option>
+                                <option value="都市传奇">都市传奇</option>
+                            </select>
+                        </div>
+                        <div class="setup-item">
+                            <label>主角身份：</label>
+                            <select id="protagonist-type">
+                                <option value="普通人">普通人</option>
+                                <option value="学生">学生</option>
+                                <option value="科学家">科学家</option>
+                                <option value="侦探">侦探</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="story-summary" class="summary-box">
+                        <h3>故事大纲</h3>
+                        <p id="summary-text">选择一个故事类型和主角身份，生成故事大纲...</p>
+                        <div id="character-list">
+                            <h4>主要人物：</h4>
+                            <ul id="characters"></ul>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="generateStorySetup()">生成故事设定</button>
+                        <button onclick="startStory()" id="start-story-btn" style="display: none;">开始冒险</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="story-container" style="display: none;">
+                <div id="progress-bar">
+                    <div id="progress">0/20</div>
+                    <div id="progress-fill"></div>
+                </div>
+                
+                <div id="story-content">
+                    <p id="story-text">故事加载中...</p>
+                </div>
+                
+                <div id="choices-container" style="display: none;">
+                    <h3>请选择你的行动：</h3>
+                    <div id="choices"></div>
+                </div>
+
+                <div id="loading" style="display: none;">
+                    <p>AI正在思考中...</p>
+                </div>
+
+                <div id="controls">
+                    <button id="start-btn" onclick="startStory()" style="display: none;">开始故事</button>
+                    <button id="reset-btn" onclick="resetStory()" style="display: none;">重新开始</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>由Kimi AI驱动</p>
+        </footer>
+    </div>
+
+    <script src="story.config.js"></script>
+    <script src="story.js"></script>
+</body>
+</html>

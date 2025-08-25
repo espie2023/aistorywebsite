@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .log { background: #f5f5f5; padding: 20px; border-radius: 5px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Kimi API测试页面</h1>
+    <button onclick="testConnection()">测试API连接</button>
+    <button onclick="checkEnvironment()">检查环境</button>
+    <button onclick="testCors()">测试CORS</button>
+    
+    <div id="log">
+        <p>点击按钮开始测试...</p>
+    </div>
+
+    <script>
+        const PROXY_API_URL = '/api/chat';
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(p);
+        }
+
+        async function testConnection() {
+            log('正在通过后端代理测试API连接...');
+            
+            try {
+                const response = await fetch(PROXY_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'moonshot-v1-8k',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: '说"你好，API测试成功"'
+                            }
+                        ],
+                        max_tokens: 50
+                    })
+                });
+
+                log(`HTTP状态码: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('API响应成功: ' + data.choices[0].message.content, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log('错误响应: ' + errorText, 'error');
+                }
+            } catch (error) {
+                log('网络错误: ' + error.message, 'error');
+            }
+        }
+
+        function checkEnvironment() {
+            log('浏览器信息: ' + navigator.userAgent);
+            log('当前页面协议: ' + window.location.protocol);
+            log('后端代理接口: ' + PROXY_API_URL);
+            log('API密钥已从前端移除。', 'success');
+        }
+
+        async function testCors() {
+            log('测试后端CORS设置...');
+            try {
+                const response = await fetch(PROXY_API_URL, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'content-type'
+                    }
+                });
+                log('CORS Preflight测试状态码: ' + response.status);
+                if(response.ok) {
+                    log('后端CORS策略看起来是正确的。', 'success');
+                } else {
+                    log('后端CORS策略可能有问题。', 'error');
+                }
+            } catch (error) {
+                log('CORS测试错误: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
