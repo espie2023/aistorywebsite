@@ -19,13 +19,13 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // 获取API配置
-        const apiKey = process.env.OPENAI_API_KEY || process.env.KIMI_API_KEY;
+        // 获取OpenAI兼容API配置
+        const apiKey = process.env.OPENAI_API_KEY;
         const apiBaseUrl = process.env.OPENAI_API_BASE || 'https://api.moonshot.cn/v1';
         const defaultModel = process.env.OPENAI_DEFAULT_MODEL || 'moonshot-v1-8k';
         
         if (!apiKey) {
-            res.status(503).json({ error: 'API密钥未配置，请设置 OPENAI_API_KEY 或 KIMI_API_KEY 环境变量' });
+            res.status(503).json({ error: 'API密钥未配置，请设置 OPENAI_API_KEY 环境变量' });
             return;
         }
 

@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/chat.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "builds": [
     {
       "src": "index.html",
@@ -42,6 +47,12 @@
     {
       "src": "/(.*)",
       "dest": "/$1"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/chat",
+      "destination": "/api/chat.js"
     }
   ]
 }
