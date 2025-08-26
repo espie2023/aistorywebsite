@@ -5,25 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API测试页面</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .log { background: #f5f5f5; padding: 20px; border-radius: 5px; margin: 10px 0; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            max-width: 800px;
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 20px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            max-height: 400px;
+            overflow-y: auto;
+        }
         .error { color: red; }
         .success { color: green; }
-        button { padding: 10px 20px; margin: 5px; }
+        .info { color: blue; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px;
+            cursor: pointer;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .model-suggestions {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <h1>Kimi API测试页面</h1>
-    <button onclick="testConnection()">测试API连接</button>
-    <button onclick="checkEnvironment()">检查环境</button>
-    <button onclick="testCors()">测试CORS</button>
+    <h1>API测试页面</h1>
+    
+    <div class="input-group">
+        <label for="modelInput">模型ID（仅测试用）:</label>
+        <input type="text" id="modelInput" placeholder="输入模型ID，如 deepseek/deepseek-chat:free" />
+        <div class="model-suggestions">
+            常用示例: deepseek/deepseek-chat:free | qwen/qwen-2-7b-instruct:free | google/gemini-flash-1.5-exp:free
+        </div>
+    </div>
+    
+    <button onclick="testConnection()">测试指定模型</button>
+    <button onclick="testDefaultModel()">测试默认模型</button>
+    <button onclick="checkEnvironment()">检查环境变量</button>
+    <button onclick="clearLog()">清空日志</button>
     
     <div id="log">
-        <p>点击按钮开始测试...</p>
+        <p>输入模型ID后点击测试按钮开始调试...</p>
     </div>
 
     <script>
         const PROXY_API_URL = '/api/chat';
+        const defaultModel = 'moonshot-v1-8k'; // 默认模型
 
         function log(message, type = 'info') {
             const logDiv = document.getElementById('log');
@@ -31,10 +78,21 @@
             p.className = type;
             p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
             logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<p>日志已清空...</p>';
         }
 
         async function testConnection() {
-            log('正在通过后端代理测试API连接...');
+            const modelInput = document.getElementById('modelInput').value.trim();
+            if (!modelInput) {
+                log('请输入模型ID', 'error');
+                return;
+            }
+
+            log(`正在测试模型: ${modelInput}...`);
             
             try {
                 const response = await fetch(PROXY_API_URL, {
@@ -43,10 +101,11 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        model: modelInput,
                         messages: [
                             {
                                 role: 'user',
-                                content: '说"你好，API测试成功"'
+                                content: '说"你好，模型测试成功"'
                             }
                         ],
                         max_tokens: 50
@@ -58,42 +117,94 @@
                 if (response.ok) {
                     const data = await response.json();
                     log('API响应成功: ' + data.choices[0].message.content, 'success');
+                    log('使用模型: ' + data.model, 'info');
                 } else {
-                    const errorText = await response.text();
-                    log('错误响应: ' + errorText, 'error');
+                    const errorData = await response.text();
+                    log('错误详情: ' + errorData, 'error');
                 }
             } catch (error) {
                 log('网络错误: ' + error.message, 'error');
             }
         }
 
-        function checkEnvironment() {
-            log('浏览器信息: ' + navigator.userAgent);
-            log('当前页面协议: ' + window.location.protocol);
-            log('后端代理接口: ' + PROXY_API_URL);
-            log('API密钥已从前端移除。', 'success');
-        }
-
-        async function testCors() {
-            log('测试后端CORS设置...');
+        async function testDefaultModel() {
+            log('正在测试默认模型...');
+            
             try {
                 const response = await fetch(PROXY_API_URL, {
-                    method: 'OPTIONS',
+                    method: 'POST',
                     headers: {
-                        'Access-Control-Request-Method': 'POST',
-                        'Access-Control-Request-Headers': 'content-type'
-                    }
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: 'user',
+                                content: '说"你好，默认模型测试成功"'
+                            }
+                        ],
+                        max_tokens: 50
+                    })
                 });
-                log('CORS Preflight测试状态码: ' + response.status);
-                if(response.ok) {
-                    log('后端CORS策略看起来是正确的。', 'success');
+
+                log(`HTTP状态码: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('默认模型响应成功: ' + data.choices[0].message.content, 'success');
+                    log('使用默认模型: ' + data.model, 'info');
                 } else {
-                    log('后端CORS策略可能有问题。', 'error');
+                    const errorData = await response.text();
+                    log('默认模型错误: ' + errorData, 'error');
                 }
             } catch (error) {
-                log('CORS测试错误: ' + error.message, 'error');
+                log('网络错误: ' + error.message, 'error');
             }
         }
+
+        async function checkEnvironment() {
+            log('=== 环境变量检查 ===');
+            log('当前配置（后端获取）:');
+            log('API基础URL: 通过环境变量 OPENAI_API_BASE 配置');
+            log('默认模型: 通过环境变量 OPENAI_DEFAULT_MODEL 配置');
+            log('=== 结束 ===');
+        }
+
+        // 回车键快捷测试
+        document.getElementById('modelInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testConnection();
+            }
+        });
+
+        // 预填充一些常用模型
+        const modelSuggestions = [
+            'deepseek/deepseek-chat:free',
+            'qwen/qwen-2-7b-instruct:free',
+            'google/gemini-flash-1.5-exp:free',
+            'microsoft/wizardlm-2-8x22b:free',
+            'deepseek/deepseek-chat',
+            'qwen/qwen-2-72b-instruct'
+        ];
+
+        // 自动完成功能
+        document.getElementById('modelInput').addEventListener('input', function(e) {
+            const value = e.target.value.toLowerCase();
+            const filtered = modelSuggestions.filter(s => s.toLowerCase().includes(value));
+            if (filtered.length > 0 && value.length > 0) {
+                e.target.setAttribute('list', 'modelSuggestions');
+                const datalist = document.createElement('datalist');
+                datalist.id = 'modelSuggestions';
+                filtered.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    datalist.appendChild(option);
+                });
+                if (!document.getElementById('modelSuggestions')) {
+                    document.body.appendChild(datalist);
+                }
+            }
+        });
     </script>
 </body>
 </html>
