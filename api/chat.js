@@ -40,6 +40,16 @@ module.exports = async (req, res) => {
         // 构建API端点URL
         const apiUrl = `${apiBaseUrl.replace(/\/$/, '')}/chat/completions`;
         
+        // 调试：记录完整请求信息
+        console.log('Request to:', apiUrl);
+        console.log('Model:', model);
+        console.log('Request body:', JSON.stringify({
+            model,
+            messages,
+            max_tokens,
+            temperature
+        }));
+        
         // 调用OpenAI兼容API
         const response = await fetch(apiUrl, {
             method: 'POST',
