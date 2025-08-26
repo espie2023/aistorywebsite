@@ -19,23 +19,29 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // 检查API密钥
-        const apiKey = process.env.KIMI_API_KEY;
+        // 获取API配置
+        const apiKey = process.env.OPENAI_API_KEY || process.env.KIMI_API_KEY;
+        const apiBaseUrl = process.env.OPENAI_API_BASE || 'https://api.moonshot.cn/v1';
+        const defaultModel = process.env.OPENAI_DEFAULT_MODEL || 'moonshot-v1-8k';
+        
         if (!apiKey) {
-            res.status(503).json({ error: 'API密钥未配置' });
+            res.status(503).json({ error: 'API密钥未配置，请设置 OPENAI_API_KEY 或 KIMI_API_KEY 环境变量' });
             return;
         }
 
         // 获取请求数据
-        const { model = 'moonshot-v1-8k', messages, max_tokens = 200, temperature = 0.7 } = req.body;
+        const { model = defaultModel, messages, max_tokens = 200, temperature = 0.7 } = req.body;
 
         if (!messages || !Array.isArray(messages)) {
             res.status(400).json({ error: '请求格式错误：缺少messages参数' });
             return;
         }
 
-        // 调用Kimi API
-        const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
+        // 构建API端点URL
+        const apiUrl = `${apiBaseUrl.replace(/\/$/, '')}/chat/completions`;
+        
+        // 调用OpenAI兼容API
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -51,7 +57,7 @@ module.exports = async (req, res) => {
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('Kimi API错误:', response.status, errorData);
+            console.error('AI API错误:', response.status, errorData);
             res.status(response.status).json({ error: `API错误: ${errorData}` });
             return;
         }
