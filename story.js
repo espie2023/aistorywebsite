@@ -17,7 +17,6 @@ async function callKimiAPI(prompt) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'moonshot-v1-8k',
                 messages: [
                     {
                         role: 'system',
