@@ -11,6 +11,9 @@ let protagonistType = '';
 async function callKimiAPI(prompt) {
     try {
         console.log('正在通过后端代理调用API...');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+        
         const response = await fetch(PROXY_API_URL, {
             method: 'POST',
             headers: {
@@ -28,8 +31,11 @@ async function callKimiAPI(prompt) {
                 ],
                 max_tokens: 200,
                 temperature: 0.7
-            })
+            }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errorData = await response.text();
@@ -42,7 +48,9 @@ async function callKimiAPI(prompt) {
         return data.choices[0].message.content;
     } catch (error) {
         console.error('Error calling Kimi API:', error);
-        if (error.message.includes('API密钥未配置')) {
+        if (error.name === 'AbortError') {
+            return `抱歉，AI响应超时。请稍后重试。`;
+        } else if (error.message.includes('API密钥未配置')) {
             return `抱歉，API密钥未配置。请联系管理员设置KIMI_API_KEY环境变量。`;
         } else if (error.message.includes('网络')) {
             return `抱歉，网络连接出现问题。请检查网络连接后重试。`;
@@ -174,28 +182,40 @@ async function generateStorySetup() {
     let characters = [];
     let endings = [];
     
-    sections.forEach(section => {
+    // 更准确地解析故事设定内容
+    for (const section of sections) {
         if (section.includes('【故事大纲】')) {
             summary = section.replace('【故事大纲】', '').trim();
         } else if (section.includes('【主要人物】')) {
             const charLines = section.split('\n').slice(1);
-            characters = charLines.filter(line => line.trim() && line.includes('：'));
+            characters = charLines.filter(line => line.trim() && (line.includes('：') || line.includes(':')));
         } else if (section.includes('【可能结局】')) {
             const endingLines = section.split('\n').slice(1);
-            endings = endingLines.filter(line => line.trim() && line.includes('：'));
+            endings = endingLines.filter(line => line.trim() && (line.includes('：') || line.includes(':')));
         }
-    });
+    }
+    
+    // 如果没有找到明确的标记，尝试其他解析方式
+    if (!summary && sections.length > 0) {
+        summary = sections[0].trim();
+    }
     
     // 显示故事设定
-    document.getElementById('summary-text').textContent = summary;
+    document.getElementById('summary-text').innerHTML = summary || '暂无故事大纲内容';
     
     const charactersList = document.getElementById('characters');
     charactersList.innerHTML = '';
-    characters.forEach(char => {
+    if (characters.length > 0) {
+        characters.forEach(char => {
+            const li = document.createElement('li');
+            li.textContent = char.trim().replace(/^[\s-]+/, ''); // 去除前导空格和破折号
+            charactersList.appendChild(li);
+        });
+    } else {
         const li = document.createElement('li');
-        li.textContent = char.trim();
+        li.textContent = '暂无角色信息';
         charactersList.appendChild(li);
-    });
+    }
     
     storySetup = { summary, characters, endings, storyType, protagonistType };
     
@@ -214,6 +234,9 @@ async function startStory() {
     currentStep = 0;
     updateProgress();
     
+    // 显示初始加载文本
+    document.getElementById('story-text').innerHTML = '<p>故事正在生成中，请稍候...</p>';
+    
     const prompt = `开始一个${storySetup.storyType}故事，主角是一个${storySetup.protagonistType}。
     
     故事大纲：${storySetup.summary}
@@ -228,6 +251,9 @@ async function startStory() {
     const choices = parseChoices(response);
     if (choices.length > 0) {
         displayChoices(choices);
+    } else {
+        // 如果没有选择项，显示默认选项
+        displayChoices(['继续故事', '探索周围', '寻找线索']);
     }
     
     hideLoading();
@@ -237,6 +263,10 @@ async function startStory() {
 
 async function makeChoice(choice) {
     showLoading();
+    
+    // 显示用户选择和加载状态
+    const loadingText = `<p><strong>你的选择：</strong>${choice}</p><p>故事正在继续生成中，请稍候...</p>`;
+    document.getElementById('story-text').innerHTML += loadingText;
     
     const prompt = `继续故事。之前的故事：${currentStory}\n\n读者选择：${choice}\n\n请继续故事，并提供新的2-3个选择。`;
     
@@ -290,6 +320,9 @@ function updateProgress() {
 
 async function endStory() {
     showLoading();
+    
+    // 显示结束加载状态
+    document.getElementById('story-text').innerHTML += '<p><strong>故事即将结束...</strong></p>';
     
     const prompt = `故事即将结束。当前故事发展：${currentStory}
     
